@@ -176,7 +176,7 @@ class BudgetAlert(BaseModel):
 class AIExpenseService:
     def __init__(self):
         self.model = None
-        if GOOGLE_API_KEY:
+        if AI_ENABLED and GOOGLE_API_KEY:
             try:
                 self.model = genai.GenerativeModel('gemma-3-27b-it')
                 logger.info("AI model 'gemma-3-27b-it' initialized.")
@@ -185,15 +185,25 @@ class AIExpenseService:
 
     def predict_next_month_expenses(self, expenses: List[Expense]) -> AIInsight:
         """Predict next month's expenses using AI"""
-        if not self.model:
+        if not self.model or not AI_ENABLED:
             logger.warning("AI model not available for prediction.")
-            return AIInsight(type="prediction", message="AI service not available.", confidence=0.0)
+            return AIInsight(
+                type="prediction", 
+                message="AI prediction service not available. Please configure GOOGLE_API_KEY.", 
+                confidence=0.0,
+                data={"mock": True, "predicted_total": 1500.0}
+            )
         
         try:
             recent_expenses = [exp for exp in expenses if datetime.strptime(exp.date, '%Y-%m-%d') >= datetime.now() - timedelta(days=90)]
             if not recent_expenses:
                 logger.info("Not enough recent expense data for AI prediction.")
-                return AIInsight(type="prediction", message="Not enough recent expense data for accurate prediction.", confidence=0.1)
+                return AIInsight(
+                    type="prediction", 
+                    message="Not enough recent expense data for accurate prediction.", 
+                    confidence=0.1,
+                    data={"predicted_total": 0.0}
+                )
 
             expense_data_str = json.dumps([exp.model_dump() for exp in recent_expenses], indent=2, default=str)
             prompt = f"""
@@ -230,13 +240,29 @@ class AIExpenseService:
                 return AIInsight(type="prediction", message="AI prediction parsing failed.", confidence=0.5)
         except Exception as e:
             logger.error(f"AI prediction error: {e}")
-            return AIInsight(type="prediction", message="Unable to generate prediction at this time.", confidence=0.0, data={"error": str(e)})
+            return AIInsight(
+                type="prediction", 
+                message="Unable to generate prediction at this time.", 
+                confidence=0.0, 
+                data={"error": str(e)}
+            )
 
     def categorize_expense(self, expense_name: str, amount: float) -> str:
         """Suggest expense category using AI"""
-        if not self.model:
+        if not self.model or not AI_ENABLED:
             logger.warning("AI model not available for categorization.")
-            return "Other"
+            # Simple rule-based fallback
+            name_lower = expense_name.lower()
+            if any(word in name_lower for word in ['coffee', 'tea', 'lunch', 'dinner', 'food', 'restaurant']):
+                return "Food"
+            elif any(word in name_lower for word in ['bus', 'taxi', 'uber', 'metro', 'transport']):
+                return "Transportation"
+            elif any(word in name_lower for word in ['grocery', 'supermarket', 'store']):
+                return "Groceries"
+            elif any(word in name_lower for word in ['movie', 'game', 'entertainment']):
+                return "Entertainment"
+            else:
+                return "Other"
         
         try:
             valid_categories = ["Food", "Transportation", "Bills", "Entertainment", "Housing", "Groceries", "Health", "Education", "Personal Care", "Savings", "Travel", "Other"]
@@ -261,9 +287,17 @@ class AIExpenseService:
 
     def get_spending_insights(self, expenses: List[Expense]) -> List[AIInsight]:
         """Get AI-powered spending insights"""
-        if not self.model or not expenses:
+        if not self.model or not AI_ENABLED or not expenses:
             logger.warning("AI model not available or no expenses provided for insights.")
-            return []
+            # Return mock insights
+            return [
+                AIInsight(
+                    type="insight",
+                    message="AI insights are not available. Please configure GOOGLE_API_KEY to enable AI features.",
+                    confidence=0.0,
+                    data={"mock": True}
+                )
+            ]
         
         try:
             # Calculate summary data
@@ -328,8 +362,29 @@ class AIExpenseService:
 
     def get_financial_health_score(self, expenses: List[Expense], budgets: List[Budget]) -> AIInsight:
         """Calculate financial health score using AI"""
-        if not self.model:
-            return AIInsight(type="health_score", message="AI service not available.", confidence=0.0)
+        if not self.model or not AI_ENABLED:
+            # Simple calculation without AI
+            current_month = datetime.now().strftime('%Y-%m')
+            monthly_expenses = sum(exp.amount for exp in expenses if exp.date.startswith(current_month))
+            total_budget = sum(budget.amount for budget in budgets)
+            
+            if total_budget > 0:
+                utilization = (monthly_expenses / total_budget) * 100
+                if utilization < 70:
+                    score, grade = 85, "A"
+                elif utilization < 90:
+                    score, grade = 70, "B"
+                else:
+                    score, grade = 50, "C"
+            else:
+                score, grade = 60, "B"
+            
+            return AIInsight(
+                type="health_score",
+                message=f"Financial Health Score: {score}/100 (Grade: {grade}) - Basic calculation without AI",
+                confidence=0.7,
+                data={"health_score": score, "grade": grade, "mock": True}
+            )
         
         try:
             # Calculate metrics
