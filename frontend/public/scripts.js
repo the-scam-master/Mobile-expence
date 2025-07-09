@@ -515,22 +515,18 @@ class ExpenseTracker {
         document.getElementById('add-expense-modal').classList.add('active');
     }
 
-    hideAddExpenseModal() {
-        document.getElementById('add-expense-modal').classList.remove('active');
-    }
-
-    showBudgetModal() {
-        document.getElementById('budget-modal').classList.add('active');
-    }
-
-    hideBudgetModal() {
-        document.getElementById('budget-modal').classList.remove('active');
-    }
-
     closeAllModals() {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.classList.remove('active');
         });
+    }
+
+    hideAddExpenseModal() {
+        document.getElementById('add-expense-modal').classList.remove('active');
+    }
+
+    hideBudgetModal() {
+        document.getElementById('budget-modal').classList.remove('active');
     }
 
     showLoading() {
