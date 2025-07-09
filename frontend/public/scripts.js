@@ -110,10 +110,10 @@ class ExpenseTracker {
                 const newExpense = await response.json();
                 this.expenses.unshift(newExpense);
                 this.updateDashboard();
-                this.hideAddExpenseModal();
                 this.showToast('Expense added successfully!', 'success');
                 e.target.reset();
                 this.setCurrentDate();
+                this.hideAddExpenseModal();
             } else {
                 const error = await response.json();
                 throw new Error(error.error || 'Failed to add expense');
