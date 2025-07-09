@@ -283,20 +283,22 @@ body {
     gap: var(--spacing-sm);
     padding: var(--spacing-lg);
     border: none;
-    border-radius: var(--radius-lg);
-    background: var(--white);
-    color: var(--gray-700);
+    border-radius: var(--radius-xl);
+    background: var(--card-white);
+    color: var(--gray-600);
     cursor: pointer;
     transition: var(--transition);
     box-shadow: var(--shadow-sm);
-    border: 1px solid var(--gray-200);
+    border: 1px solid var(--gray-150);
     font-size: var(--font-size-sm);
     font-weight: 500;
+    min-height: 80px;
 }
 
 .action-btn:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
+    background: var(--gray-50);
 }
 
 .action-btn.primary {
@@ -306,11 +308,13 @@ body {
 }
 
 .action-btn.primary:hover {
-    background: #0056CC;
+    background: var(--primary-dark);
+    box-shadow: var(--shadow-md);
 }
 
 .action-icon {
     font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-xs);
 }
 
 /* Statistics Section */
