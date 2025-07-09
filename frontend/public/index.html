@@ -1,151 +1,276 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#000000" />
-        <meta name="description" content="A product of emergent.sh" />
-        <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-        <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-        <title>Emergent | Fullstack App</title>
-    </head>
-    <body>
-        <noscript>You need to enable JavaScript to run this app.</noscript>
-        <div id="root"></div>
-        <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-        <a
-            id="emergent-badge"
-            target="_blank"
-            href="https://app.emergent.sh/?utm_source=emergent-badge"
-            style="
-                display: flex !important;
-                align-items: center !important;
-                position: fixed !important;
-                bottom: 20px;
-                right: 20px;
-                text-decoration: none;
-                padding: 6px 10px;
-                font-family: -apple-system, BlinkMacSystemFont,
-                    &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell,
-                    &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;,
-                    sans-serif !important;
-                font-size: 12px !important;
-                z-index: 9999 !important;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-                border-radius: 8px !important;
-                background-color: #ffffff !important;
-                border: 1px solid rgba(255, 255, 255, 0.25) !important;
-            "
-        >
-            <div
-                style="display: flex; flex-direction: row; align-items: center"
-            >
-                <img
-                    style="width: 20px; height: 20px; margin-right: 8px"
-                    src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4"
-                />
-                <p
-                    style="
-                        color: #000000;
-                        font-family: -apple-system, BlinkMacSystemFont,
-                            &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu,
-                            Cantarell, &quot;Open Sans&quot;,
-                            &quot;Helvetica Neue&quot;, sans-serif !important;
-                        font-size: 12px !important;
-                        align-items: center;
-                        margin-bottom: 0;
-                    "
-                >
-                    Made with Emergent
-                </p>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Tracker</title>
+    <meta name="description" content="Modern AI-powered expense tracking with smart insights">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="user-greeting">
+                    <div class="avatar">
+                        <span>👋</span>
+                    </div>
+                    <div class="greeting-text">
+                        <span class="greeting">Greetings!</span>
+                        <span class="subtext">Track your expenses smartly</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" onclick="showSettings()">
+                        <span>⚙️</span>
+                    </button>
+                </div>
             </div>
-        </a>
-        <script>
-            !(function (t, e) {
-                var o, n, p, r;
-                e.__SV ||
-                    ((window.posthog = e),
-                    (e._i = []),
-                    (e.init = function (i, s, a) {
-                        function g(t, e) {
-                            var o = e.split(".");
-                            2 == o.length && ((t = t[o[0]]), (e = o[1])),
-                                (t[e] = function () {
-                                    t.push(
-                                        [e].concat(
-                                            Array.prototype.slice.call(
-                                                arguments,
-                                                0,
-                                            ),
-                                        ),
-                                    );
-                                });
-                        }
-                        ((p = t.createElement("script")).type =
-                            "text/javascript"),
-                            (p.crossOrigin = "anonymous"),
-                            (p.async = !0),
-                            (p.src =
-                                s.api_host.replace(
-                                    ".i.posthog.com",
-                                    "-assets.i.posthog.com",
-                                ) + "/static/array.js"),
-                            (r =
-                                t.getElementsByTagName(
-                                    "script",
-                                )[0]).parentNode.insertBefore(p, r);
-                        var u = e;
-                        for (
-                            void 0 !== a ? (u = e[a] = []) : (a = "posthog"),
-                                u.people = u.people || [],
-                                u.toString = function (t) {
-                                    var e = "posthog";
-                                    return (
-                                        "posthog" !== a && (e += "." + a),
-                                        t || (e += " (stub)"),
-                                        e
-                                    );
-                                },
-                                u.people.toString = function () {
-                                    return u.toString(1) + ".people (stub)";
-                                },
-                                o =
-                                    "init me ws ys ps bs capture je Di ks register register_once register_for_session unregister unregister_for_session Ps getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Es $s createPersonProfile Is opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing Ss debug xs getPageViewId captureTraceFeedback captureTraceMetric".split(
-                                        " ",
-                                    ),
-                                n = 0;
-                            n < o.length;
-                            n++
-                        )
-                            g(u, o[n]);
-                        e._i.push([i, s, a]);
-                    }),
-                    (e.__SV = 1));
-            })(document, window.posthog || []);
-            posthog.init("phc_yJW1VjHGGwmCbbrtczfqqNxgBDbhlhOWcdzcIJEOTFE", {
-                api_host: "https://us.i.posthog.com",
-                person_profiles: "identified_only", // or 'always' to create profiles for anonymous users as well
-            });
-        </script>
-    </body>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Overview Cards -->
+            <div class="overview-section">
+                <div class="card balance-card">
+                    <div class="card-header">
+                        <span class="card-title">Total Balance</span>
+                        <button class="card-menu-btn" onclick="toggleCardMenu('balance')">⋯</button>
+                    </div>
+                    <div class="balance-amount" id="total-balance">₹0.00</div>
+                    <div class="card-info">
+                        <span class="card-number">•••• 1810</span>
+                        <span class="card-date">10/24</span>
+                    </div>
+                </div>
+
+                <div class="card expense-card">
+                    <div class="card-header">
+                        <span class="card-title">This Month</span>
+                        <button class="card-menu-btn" onclick="toggleCardMenu('expense')">⋯</button>
+                    </div>
+                    <div class="expense-amount" id="month-expense">₹0.00</div>
+                    <div class="card-info">
+                        <span class="card-number">•••• 1423</span>
+                        <span class="card-date">10/24</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="action-btn primary" onclick="showAddExpenseModal()">
+                    <span class="action-icon">💸</span>
+                    <span>Add Expense</span>
+                </button>
+                <button class="action-btn" onclick="showBudgetModal()">
+                    <span class="action-icon">📊</span>
+                    <span>Budget</span>
+                </button>
+                <button class="action-btn" onclick="showAnalytics()">
+                    <span class="action-icon">📈</span>
+                    <span>Analytics</span>
+                </button>
+                <button class="action-btn" onclick="getAIInsights()">
+                    <span class="action-icon">🤖</span>
+                    <span>AI Insights</span>
+                </button>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="statistics-section">
+                <div class="section-header">
+                    <h3>Statistics</h3>
+                    <select class="time-filter" onchange="filterExpenses(this.value)">
+                        <option value="week">This week</option>
+                        <option value="month" selected>This month</option>
+                        <option value="year">This year</option>
+                    </select>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="donut-chart">
+                        <canvas id="expense-chart" width="120" height="120"></canvas>
+                        <div class="chart-center">
+                            <span class="chart-amount" id="chart-total">₹0</span>
+                        </div>
+                    </div>
+                    <div class="chart-legend" id="chart-legend">
+                        <!-- Legend items will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Expenses -->
+            <div class="recent-section">
+                <div class="section-header">
+                    <h3>Recent Expenses</h3>
+                    <button class="see-all-btn" onclick="showAllExpenses()">See all</button>
+                </div>
+                <div class="expense-list" id="recent-expenses">
+                    <!-- Recent expenses will be populated here -->
+                </div>
+            </div>
+
+            <!-- AI Insights -->
+            <div class="insights-section" id="insights-section" style="display: none;">
+                <div class="section-header">
+                    <h3>AI Insights</h3>
+                    <button class="refresh-btn" onclick="refreshInsights()">🔄</button>
+                </div>
+                <div class="insights-container" id="insights-container">
+                    <!-- AI insights will be populated here -->
+                </div>
+            </div>
+
+            <!-- Budget Alerts -->
+            <div class="alerts-section" id="alerts-section" style="display: none;">
+                <div class="section-header">
+                    <h3>Budget Alerts</h3>
+                </div>
+                <div class="alerts-container" id="alerts-container">
+                    <!-- Budget alerts will be populated here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="showHome()">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" onclick="showExpenses()">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Expenses</span>
+            </button>
+            <button class="nav-item" onclick="showBudgets()">
+                <span class="nav-icon">💰</span>
+                <span class="nav-label">Budgets</span>
+            </button>
+            <button class="nav-item" onclick="showProfile()">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div class="modal" id="add-expense-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Expense</h3>
+                <button class="close-btn" onclick="hideAddExpenseModal()">×</button>
+            </div>
+            <form class="expense-form" id="expense-form">
+                <div class="form-group">
+                    <label for="expense-name">Expense Name</label>
+                    <input type="text" id="expense-name" placeholder="e.g., Coffee, Groceries" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="expense-amount">Amount</label>
+                        <input type="number" id="expense-amount" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-date">Date</label>
+                        <input type="date" id="expense-date" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="expense-category">Category</label>
+                    <div class="category-input">
+                        <select id="expense-category" required>
+                            <option value="">Select category</option>
+                            <option value="Food">🍽️ Food</option>
+                            <option value="Transportation">🚗 Transportation</option>
+                            <option value="Bills">📋 Bills</option>
+                            <option value="Entertainment">🎬 Entertainment</option>
+                            <option value="Housing">🏠 Housing</option>
+                            <option value="Groceries">🛒 Groceries</option>
+                            <option value="Health">💊 Health</option>
+                            <option value="Education">📚 Education</option>
+                            <option value="Personal Care">🧴 Personal Care</option>
+                            <option value="Savings">💰 Savings</option>
+                            <option value="Travel">✈️ Travel</option>
+                            <option value="Other">📦 Other</option>
+                        </select>
+                        <button type="button" class="ai-btn" onclick="suggestCategory()">
+                            <span>🤖 AI</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="expense-description">Description (Optional)</label>
+                    <textarea id="expense-description" placeholder="Add a note..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideAddExpenseModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Budget Modal -->
+    <div class="modal" id="budget-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Set Budget</h3>
+                <button class="close-btn" onclick="hideBudgetModal()">×</button>
+            </div>
+            <form class="budget-form" id="budget-form">
+                <div class="form-group">
+                    <label for="budget-category">Category</label>
+                    <select id="budget-category" required>
+                        <option value="">Select category</option>
+                        <option value="Food">🍽️ Food</option>
+                        <option value="Transportation">🚗 Transportation</option>
+                        <option value="Bills">📋 Bills</option>
+                        <option value="Entertainment">🎬 Entertainment</option>
+                        <option value="Housing">🏠 Housing</option>
+                        <option value="Groceries">🛒 Groceries</option>
+                        <option value="Health">💊 Health</option>
+                        <option value="Education">📚 Education</option>
+                        <option value="Personal Care">🧴 Personal Care</option>
+                        <option value="Savings">💰 Savings</option>
+                        <option value="Travel">✈️ Travel</option>
+                        <option value="Other">📦 Other</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="budget-amount">Budget Amount</label>
+                        <input type="number" id="budget-amount" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="budget-period">Period</label>
+                        <select id="budget-period" required>
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideBudgetModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Set Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="scripts.js"></script>
+</body>
 </html>
