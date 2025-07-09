@@ -28,16 +28,59 @@ logger = logging.getLogger(__name__)
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Data Models
+class Expense(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    amount: float
+    date: str
+    category: str
+    description: Optional[str] = ""
+    created_at: datetime = Field(default_factory=datetime.now)
+
+class Budget(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    category: str
+    amount: float
+    period: str = "monthly"
+    created_at: datetime = Field(default_factory=datetime.now)
+
+class ExpenseAnalytics(BaseModel):
+    total_expenses: float
+    category_breakdown: Dict[str, float]
+    monthly_trend: List[Dict[str, Any]]
+    average_daily_spend: float
+    highest_spending_category: str
+    spending_growth: float
+
+class AIInsight(BaseModel):
+    type: str
+    message: str
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    data: Dict[str, Any] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+class BudgetAlert(BaseModel):
+    category: str
+    budget_amount: float
+    spent_amount: float
+    percentage_used: float = Field(..., ge=0.0)
+    alert_type: str
+    days_remaining: int
+
 # Configure Google Gemini
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-if not GOOGLE_API_KEY:
-    logger.warning("GOOGLE_API_KEY is not set in the environment variables.")
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
+if not GOOGLE_API_KEY or GOOGLE_API_KEY == 'your_google_api_key_here':
+    logger.warning("GOOGLE_API_KEY is not set or using placeholder. AI features will be limited.")
+    AI_ENABLED = False
 else:
     try:
         genai.configure(api_key=GOOGLE_API_KEY)
         logger.info("Google Generative AI configured successfully.")
+        AI_ENABLED = True
     except Exception as e:
         logger.error(f"Failed to configure Google Generative AI: {e}")
+        AI_ENABLED = False
 
 # Create Flask app
 app = Flask(__name__)
@@ -49,6 +92,45 @@ executor = ThreadPoolExecutor(max_workers=4)
 # In-memory storage (replace with MongoDB in production)
 expenses_db = []
 budgets_db = []
+
+# Sample data for demo
+sample_expenses = [
+    {
+        "id": str(uuid.uuid4()),
+        "name": "Morning Coffee",
+        "amount": 120.0,
+        "date": "2025-01-09",
+        "category": "Food",
+        "description": "Daily coffee from cafe",
+        "created_at": datetime.now()
+    },
+    {
+        "id": str(uuid.uuid4()),
+        "name": "Bus Fare",
+        "amount": 50.0,
+        "date": "2025-01-09",
+        "category": "Transportation",
+        "description": "Public transport",
+        "created_at": datetime.now()
+    },
+    {
+        "id": str(uuid.uuid4()),
+        "name": "Lunch",
+        "amount": 200.0,
+        "date": "2025-01-08",
+        "category": "Food",
+        "description": "Office lunch",
+        "created_at": datetime.now()
+    }
+]
+
+# Add sample data to expenses_db
+for expense_data in sample_expenses:
+    try:
+        expense = Expense(**expense_data)
+        expenses_db.append(expense)
+    except:
+        pass  # Skip invalid sample data
 
 # Data Models
 class Expense(BaseModel):
