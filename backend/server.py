@@ -669,8 +669,10 @@ def get_financial_health():
 def health_check():
     return jsonify({
         "status": "healthy",
-        "ai_service_status": "available" if ai_service.model else "unavailable",
-        "timestamp": datetime.now().isoformat()
+        "ai_service_status": "available" if AI_ENABLED and ai_service.model else "unavailable",
+        "api_key_configured": bool(GOOGLE_API_KEY and GOOGLE_API_KEY != 'your_google_api_key_here'),
+        "timestamp": datetime.now().isoformat(),
+        "sample_data_loaded": len(expenses_db) > 0
     })
 
 if __name__ == '__main__':
