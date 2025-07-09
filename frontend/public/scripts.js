@@ -26,9 +26,16 @@ class ExpenseTracker {
         document.getElementById('expense-form').addEventListener('submit', this.handleAddExpense.bind(this));
         document.getElementById('budget-form').addEventListener('submit', this.handleAddBudget.bind(this));
         
-        // Modal clicks
+        // Modal clicks outside to close
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
+                this.closeAllModals();
+            }
+        });
+        
+        // ESC key to close modals
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
                 this.closeAllModals();
             }
         });
