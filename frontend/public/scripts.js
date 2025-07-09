@@ -553,13 +553,14 @@ class ExpenseTracker {
     // Navigation Methods
     showHome() {
         this.currentView = 'home';
-        // Implementation for home view
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.updateDashboard();
     }
 
     showExpenses() {
         this.currentView = 'expenses';
-        this.showToast('Viewing all expenses', 'info');
-        // Implementation for expenses view
+        this.showAllExpensesView();
     }
 
     showBudgets() {
@@ -569,19 +570,101 @@ class ExpenseTracker {
 
     showProfile() {
         this.currentView = 'profile';
-        this.showToast('Profile view coming soon!', 'info');
+        this.showProfileView();
     }
 
     showAllExpenses() {
-        this.showExpenses();
+        this.showAllExpensesView();
+    }
+
+    showAllExpensesView() {
+        // Show all expenses in a clean view
+        const container = document.getElementById('recent-expenses');
+        if (this.expenses.length === 0) {
+            container.innerHTML = this.renderEmptyState('💳', 'No expenses yet', 'Add your first expense to get started');
+            return;
+        }
+
+        container.innerHTML = this.expenses.map(expense => `
+            <div class="expense-item">
+                <div class="expense-icon">${this.getCategoryIcon(expense.category)}</div>
+                <div class="expense-details">
+                    <div class="expense-name">${expense.name}</div>
+                    <div class="expense-meta">${expense.category} • ${this.formatDate(expense.date)}</div>
+                    ${expense.description ? `<div class="expense-description">${expense.description}</div>` : ''}
+                </div>
+                <div class="expense-amount">-${this.formatCurrency(expense.amount)}</div>
+                <button class="expense-delete" onclick="app.deleteExpense('${expense.id}')">🗑️</button>
+            </div>
+        `).join('');
+        
+        this.showToast(`Showing all ${this.expenses.length} expenses`, 'info');
+    }
+
+    showProfileView() {
+        // Show user profile/settings
+        const totalExpenses = this.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const avgDaily = totalExpenses / Math.max(this.expenses.length, 1);
+        const categories = [...new Set(this.expenses.map(exp => exp.category))];
+        
+        const profileData = {
+            totalExpenses: this.formatCurrency(totalExpenses),
+            expenseCount: this.expenses.length,
+            avgDaily: this.formatCurrency(avgDaily),
+            categoriesUsed: categories.length,
+            joinedDate: '2025-01-01' // Mock join date
+        };
+        
+        // Create a simple profile display
+        alert(`Profile Summary:
+📊 Total Expenses: ${profileData.totalExpenses}
+📈 Total Records: ${profileData.expenseCount}
+💰 Avg Daily: ${profileData.avgDaily}
+🏷️ Categories Used: ${profileData.categoriesUsed}
+📅 Member Since: ${profileData.joinedDate}`);
     }
 
     showAnalytics() {
         this.getFinancialHealth();
+        // Also show analytics data
+        this.showAnalyticsView();
+    }
+
+    showAnalyticsView() {
+        if (this.expenses.length === 0) {
+            this.showToast('Add some expenses to view analytics', 'info');
+            return;
+        }
+
+        // Calculate some analytics
+        const categoryBreakdown = this.getCategoryBreakdown();
+        const totalSpent = Object.values(categoryBreakdown).reduce((sum, amount) => sum + amount, 0);
+        
+        // Show analytics in an alert for now (could be a modal later)
+        let analyticsText = '📊 Expense Analytics\n\n';
+        analyticsText += `Total Spent: ${this.formatCurrency(totalSpent)}\n\n`;
+        analyticsText += 'Category Breakdown:\n';
+        
+        Object.entries(categoryBreakdown).forEach(([category, amount]) => {
+            const percentage = ((amount / totalSpent) * 100).toFixed(1);
+            analyticsText += `${this.getCategoryIcon(category)} ${category}: ${this.formatCurrency(amount)} (${percentage}%)\n`;
+        });
+        
+        alert(analyticsText);
     }
 
     showSettings() {
-        this.showToast('Settings coming soon!', 'info');
+        // Show settings options
+        const settingsMenu = `Settings Menu:
+⚙️ App Settings
+🔔 Notifications: Enabled
+💱 Currency: INR (₹)
+📊 Chart Style: Donut
+🎨 Theme: Light
+🔄 Auto-sync: On
+📱 Version: 1.0.0`;
+        
+        alert(settingsMenu);
     }
 
     refreshInsights() {
@@ -589,12 +672,48 @@ class ExpenseTracker {
     }
 
     filterExpenses(period) {
-        // Implementation for filtering expenses by period
-        this.showToast(`Filtering by ${period}`, 'info');
+        let filteredExpenses = [];
+        const now = new Date();
+        
+        switch(period) {
+            case 'week':
+                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                filteredExpenses = this.expenses.filter(exp => new Date(exp.date) >= weekAgo);
+                break;
+            case 'month':
+                const monthStr = now.toISOString().slice(0, 7);
+                filteredExpenses = this.expenses.filter(exp => exp.date.startsWith(monthStr));
+                break;
+            case 'year':
+                const yearStr = now.getFullYear().toString();
+                filteredExpenses = this.expenses.filter(exp => exp.date.startsWith(yearStr));
+                break;
+            default:
+                filteredExpenses = this.expenses;
+        }
+        
+        // Update chart with filtered data
+        const categoryData = {};
+        filteredExpenses.forEach(expense => {
+            categoryData[expense.category] = (categoryData[expense.category] || 0) + expense.amount;
+        });
+        
+        this.updateChartLegend(categoryData);
+        this.drawDonutChart(document.getElementById('expense-chart').getContext('2d'), categoryData, 120, 120);
+        
+        this.showToast(`Filtered to ${period}: ${filteredExpenses.length} expenses`, 'info');
     }
 
     toggleCardMenu(cardType) {
-        this.showToast(`${cardType} menu coming soon!`, 'info');
+        // Show card menu options
+        const menuOptions = {
+            balance: ['View Details', 'Set Goal', 'Export Data'],
+            expense: ['View Details', 'Set Budget', 'Category Analysis']
+        };
+        
+        const options = menuOptions[cardType] || ['Option 1', 'Option 2', 'Option 3'];
+        const menu = `${cardType.charAt(0).toUpperCase() + cardType.slice(1)} Menu:\n${options.join('\n')}`;
+        alert(menu);
     }
 
     updateNavigation(activeItem) {
