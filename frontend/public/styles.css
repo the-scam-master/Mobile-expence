@@ -193,12 +193,12 @@ body {
 }
 
 .card {
-    background: var(--white);
-    border-radius: var(--radius-lg);
+    background: var(--card-white);
+    border-radius: var(--radius-xl);
     padding: var(--spacing-lg);
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
-    border: 1px solid var(--gray-200);
+    border: 1px solid var(--gray-150);
 }
 
 .card:hover {
@@ -215,14 +215,14 @@ body {
 
 .card-title {
     font-size: var(--font-size-sm);
-    color: var(--gray-600);
+    color: var(--gray-500);
     font-weight: 500;
 }
 
 .card-menu-btn {
     background: none;
     border: none;
-    color: var(--gray-400);
+    color: var(--gray-300);
     cursor: pointer;
     font-size: var(--font-size-lg);
     padding: var(--spacing-xs);
@@ -232,26 +232,36 @@ body {
 
 .card-menu-btn:hover {
     background: var(--gray-100);
-    color: var(--gray-600);
+    color: var(--gray-500);
 }
 
 .balance-amount, .expense-amount {
     font-size: var(--font-size-2xl);
     font-weight: 700;
-    color: var(--gray-900);
+    color: var(--gray-800);
     margin-bottom: var(--spacing-md);
+    line-height: 1.2;
 }
 
 .expense-amount {
-    color: var(--danger);
+    color: var(--gray-800);
 }
 
 .card-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: var(--font-size-sm);
-    color: var(--gray-500);
+    font-size: var(--font-size-xs);
+    color: var(--gray-400);
+}
+
+.card-number {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-weight: 500;
+}
+
+.card-date {
+    font-weight: 500;
 }
 
 .card-number {
