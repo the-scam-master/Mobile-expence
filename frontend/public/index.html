@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Expense Tracker</title>
-    <meta name="description" content="Modern AI-powered expense tracking with smart insights">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+    <meta name="description" content="AI-powered expense tracking with smart insights">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💳</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -16,16 +17,19 @@
             <div class="header-content">
                 <div class="user-greeting">
                     <div class="avatar">
-                        <span>👋</span>
+                        <i class="fas fa-user"></i>
                     </div>
                     <div class="greeting-text">
-                        <span class="greeting">Greetings!</span>
-                        <span class="subtext">Track your expenses smartly</span>
+                        <span class="greeting">Hello there!</span>
+                        <span class="subtext">Manage your finances smartly</span>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="icon-btn" onclick="showSettings()">
-                        <span>⚙️</span>
+                    <button class="icon-btn" onclick="openSalaryModal()">
+                        <i class="fas fa-wallet"></i>
+                    </button>
+                    <button class="icon-btn" onclick="openSettingsModal()">
+                        <i class="fas fa-cog"></i>
                     </button>
                 </div>
             </div>
@@ -33,82 +37,119 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Overview Cards -->
+            <!-- Financial Overview Cards -->
             <div class="overview-section">
                 <div class="card balance-card">
                     <div class="card-header">
-                        <span class="card-title">Total Balance</span>
-                        <button class="card-menu-btn" onclick="toggleCardMenu('balance')">⋯</button>
+                        <div class="card-title">
+                            <i class="fas fa-piggy-bank"></i>
+                            <span>Monthly Budget</span>
+                        </div>
+                        <div class="card-menu">
+                            <button class="menu-btn" onclick="openBudgetModal()">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="balance-amount" id="total-balance">₹0.00</div>
-                    <div class="card-info">
-                        <span class="card-number">•••• 1810</span>
-                        <span class="card-date">10/24</span>
+                    <div class="card-amount" id="budget-amount">₹0</div>
+                    <div class="card-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="budget-progress"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span id="budget-spent">₹0</span>
+                            <span id="budget-remaining">₹0 left</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="card expense-card">
                     <div class="card-header">
-                        <span class="card-title">This Month</span>
-                        <button class="card-menu-btn" onclick="toggleCardMenu('expense')">⋯</button>
+                        <div class="card-title">
+                            <i class="fas fa-chart-line"></i>
+                            <span>This Month</span>
+                        </div>
+                        <div class="card-menu">
+                            <button class="menu-btn" onclick="showMonthlyView()">
+                                <i class="fas fa-calendar"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="expense-amount" id="month-expense">₹0.00</div>
+                    <div class="card-amount" id="monthly-spending">₹0</div>
                     <div class="card-info">
-                        <span class="card-number">•••• 1423</span>
-                        <span class="card-date">10/24</span>
+                        <div class="info-item">
+                            <i class="fas fa-receipt"></i>
+                            <span id="expense-count">0 expenses</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-trending-up"></i>
+                            <span id="daily-average">₹0/day</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Prediction Card -->
+            <div class="prediction-section">
+                <div class="card prediction-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-robot"></i>
+                            <span>AI Prediction</span>
+                        </div>
+                        <div class="ai-confidence">
+                            <span id="confidence-score">0%</span>
+                        </div>
+                    </div>
+                    <div class="prediction-content">
+                        <div class="prediction-amount" id="predicted-amount">₹0</div>
+                        <div class="prediction-text" id="prediction-message">Loading prediction...</div>
                     </div>
                 </div>
             </div>
 
             <!-- Quick Actions -->
             <div class="quick-actions">
-                <button class="action-btn primary" onclick="showAddExpenseModal()">
-                    <span class="action-icon">💸</span>
+                <button class="action-btn primary" onclick="openExpenseModal()">
+                    <i class="fas fa-plus"></i>
                     <span>Add Expense</span>
                 </button>
-                <button class="action-btn" onclick="showBudgetModal()">
-                    <span class="action-icon">📊</span>
-                    <span>Budget</span>
+                <button class="action-btn" onclick="getAIAnalysis()">
+                    <i class="fas fa-brain"></i>
+                    <span>AI Analysis</span>
                 </button>
-                <button class="action-btn" onclick="showAnalytics()">
-                    <span class="action-icon">📈</span>
-                    <span>Analytics</span>
-                </button>
-                <button class="action-btn" onclick="getAIInsights()">
-                    <span class="action-icon">🤖</span>
-                    <span>AI Insights</span>
+                <button class="action-btn" onclick="showSavingsAdvice()">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Savings Tips</span>
                 </button>
             </div>
 
-            <!-- Statistics Section -->
-            <div class="statistics-section">
+            <!-- Category Breakdown -->
+            <div class="category-section">
                 <div class="section-header">
-                    <h3>Statistics</h3>
-                    <select class="time-filter" onchange="filterExpenses(this.value)">
-                        <option value="week">This week</option>
-                        <option value="month" selected>This month</option>
-                        <option value="year">This year</option>
-                    </select>
+                    <h3>
+                        <i class="fas fa-chart-pie"></i>
+                        Category Breakdown
+                    </h3>
+                    <button class="toggle-btn" onclick="toggleCategoryView()">
+                        <i class="fas fa-expand"></i>
+                    </button>
                 </div>
-                
-                <div class="stats-card">
-                    <div class="donut-chart">
-                        <canvas id="expense-chart" width="120" height="120"></canvas>
-                        <div class="chart-center">
-                            <span class="chart-amount" id="chart-total">₹0</span>
-                        </div>
-                    </div>
-                    <div class="chart-legend" id="chart-legend">
-                        <!-- Legend items will be populated here -->
-                    </div>
+                <div class="category-grid" id="category-grid">
+                    <!-- Categories will be populated here -->
                 </div>
             </div>
 
             <!-- Recent Expenses -->
             <div class="recent-section">
                 <div class="section-header">
-                    <h3>Recent Expenses</h3>
-                    <button class="see-all-btn" onclick="showAllExpenses()">See all</button>
+                    <h3>
+                        <i class="fas fa-history"></i>
+                        Recent Expenses
+                    </h3>
+                    <button class="see-all-btn" onclick="showAllExpenses()">
+                        See all
+                    </button>
                 </div>
                 <div class="expense-list" id="recent-expenses">
                     <!-- Recent expenses will be populated here -->
@@ -116,100 +157,120 @@
             </div>
 
             <!-- AI Insights -->
-            <div class="insights-section" id="insights-section" style="display: none;">
+            <div class="insights-section" id="insights-section">
                 <div class="section-header">
-                    <h3>AI Insights</h3>
-                    <button class="refresh-btn" onclick="refreshInsights()">🔄</button>
+                    <h3>
+                        <i class="fas fa-magic"></i>
+                        AI Insights
+                    </h3>
+                    <button class="refresh-btn" onclick="refreshInsights()">
+                        <i class="fas fa-sync"></i>
+                    </button>
                 </div>
                 <div class="insights-container" id="insights-container">
                     <!-- AI insights will be populated here -->
-                </div>
-            </div>
-
-            <!-- Budget Alerts -->
-            <div class="alerts-section" id="alerts-section" style="display: none;">
-                <div class="section-header">
-                    <h3>Budget Alerts</h3>
-                </div>
-                <div class="alerts-container" id="alerts-container">
-                    <!-- Budget alerts will be populated here -->
                 </div>
             </div>
         </main>
 
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
-            <button class="nav-item active" onclick="showHome()">
-                <span class="nav-icon">🏠</span>
-                <span class="nav-label">Home</span>
+            <button class="nav-item active" onclick="showDashboard()">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
             </button>
             <button class="nav-item" onclick="showExpenses()">
-                <span class="nav-icon">📋</span>
-                <span class="nav-label">Expenses</span>
+                <i class="fas fa-receipt"></i>
+                <span>Expenses</span>
             </button>
-            <button class="nav-item" onclick="showBudgets()">
-                <span class="nav-icon">💰</span>
-                <span class="nav-label">Budgets</span>
+            <button class="nav-item" onclick="showAnalytics()">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
             </button>
             <button class="nav-item" onclick="showProfile()">
-                <span class="nav-icon">👤</span>
-                <span class="nav-label">Profile</span>
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
             </button>
         </nav>
     </div>
 
     <!-- Add Expense Modal -->
-    <div class="modal" id="add-expense-modal">
+    <div class="modal" id="expense-modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Add New Expense</h3>
-                <button class="close-btn" onclick="hideAddExpenseModal()">×</button>
+                <button class="close-btn" onclick="closeExpenseModal()">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <form class="expense-form" id="expense-form">
                 <div class="form-group">
-                    <label for="expense-name">Expense Name</label>
+                    <label for="expense-name">
+                        <i class="fas fa-tag"></i>
+                        Expense Name
+                    </label>
                     <input type="text" id="expense-name" placeholder="e.g., Coffee, Groceries" required>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="expense-amount">Amount</label>
-                        <input type="number" id="expense-amount" placeholder="0.00" step="0.01" required>
+                        <label for="expense-amount">
+                            <i class="fas fa-rupee-sign"></i>
+                            Amount
+                        </label>
+                        <input type="number" id="expense-amount" placeholder="0" step="0.01" required>
                     </div>
                     <div class="form-group">
-                        <label for="expense-date">Date</label>
+                        <label for="expense-date">
+                            <i class="fas fa-calendar"></i>
+                            Date
+                        </label>
                         <input type="date" id="expense-date" required>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="expense-category">Category</label>
+                    <label for="expense-category">
+                        <i class="fas fa-list"></i>
+                        Category
+                    </label>
                     <div class="category-input">
-                        <select id="expense-category" required>
-                            <option value="">Select category</option>
-                            <option value="Food">🍽️ Food</option>
+                        <select id="expense-category">
+                            <option value="">Let AI decide</option>
+                            <option value="Food & Dining">🍽️ Food & Dining</option>
                             <option value="Transportation">🚗 Transportation</option>
-                            <option value="Bills">📋 Bills</option>
+                            <option value="Bills & Utilities">📋 Bills & Utilities</option>
                             <option value="Entertainment">🎬 Entertainment</option>
-                            <option value="Housing">🏠 Housing</option>
+                            <option value="Shopping">🛍️ Shopping</option>
                             <option value="Groceries">🛒 Groceries</option>
-                            <option value="Health">💊 Health</option>
+                            <option value="Healthcare">💊 Healthcare</option>
                             <option value="Education">📚 Education</option>
-                            <option value="Personal Care">🧴 Personal Care</option>
-                            <option value="Savings">💰 Savings</option>
                             <option value="Travel">✈️ Travel</option>
+                            <option value="Personal Care">🧴 Personal Care</option>
+                            <option value="Investment">💰 Investment</option>
+                            <option value="Insurance">🛡️ Insurance</option>
+                            <option value="Rent">🏠 Rent</option>
                             <option value="Other">📦 Other</option>
                         </select>
-                        <button type="button" class="ai-btn" onclick="suggestCategory()">
-                            <span>🤖 AI</span>
+                        <button type="button" class="ai-suggest-btn" onclick="suggestCategory()">
+                            <i class="fas fa-magic"></i>
+                            AI
                         </button>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="expense-description">Description (Optional)</label>
+                    <label for="expense-description">
+                        <i class="fas fa-comment"></i>
+                        Description (Optional)
+                    </label>
                     <textarea id="expense-description" placeholder="Add a note..."></textarea>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="hideAddExpenseModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Expense</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeExpenseModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Add Expense
+                    </button>
                 </div>
             </form>
         </div>
@@ -219,58 +280,78 @@
     <div class="modal" id="budget-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Set Budget</h3>
-                <button class="close-btn" onclick="hideBudgetModal()">×</button>
+                <h3>Set Monthly Budget</h3>
+                <button class="close-btn" onclick="closeBudgetModal()">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <form class="budget-form" id="budget-form">
                 <div class="form-group">
-                    <label for="budget-category">Category</label>
-                    <select id="budget-category" required>
-                        <option value="">Select category</option>
-                        <option value="Food">🍽️ Food</option>
-                        <option value="Transportation">🚗 Transportation</option>
-                        <option value="Bills">📋 Bills</option>
-                        <option value="Entertainment">🎬 Entertainment</option>
-                        <option value="Housing">🏠 Housing</option>
-                        <option value="Groceries">🛒 Groceries</option>
-                        <option value="Health">💊 Health</option>
-                        <option value="Education">📚 Education</option>
-                        <option value="Personal Care">🧴 Personal Care</option>
-                        <option value="Savings">💰 Savings</option>
-                        <option value="Travel">✈️ Travel</option>
-                        <option value="Other">📦 Other</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="budget-amount">Budget Amount</label>
-                        <input type="number" id="budget-amount" placeholder="0.00" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="budget-period">Period</label>
-                        <select id="budget-period" required>
-                            <option value="monthly">Monthly</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
-                    </div>
+                    <label for="monthly-budget">
+                        <i class="fas fa-target"></i>
+                        Monthly Budget Amount
+                    </label>
+                    <input type="number" id="monthly-budget" placeholder="0" step="0.01" required>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="hideBudgetModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Set Budget</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeBudgetModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Set Budget
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Loading Spinner -->
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
+    <!-- Salary Modal -->
+    <div class="modal" id="salary-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Set Monthly Salary</h3>
+                <button class="close-btn" onclick="closeSalaryModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="salary-form" id="salary-form">
+                <div class="form-group">
+                    <label for="monthly-salary">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Monthly Salary/Income
+                    </label>
+                    <input type="number" id="monthly-salary" placeholder="0" step="0.01" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeSalaryModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Set Salary
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <!-- Toast Notifications -->
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
     <div class="toast-container" id="toast-container"></div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="openExpenseModal()">
+        <i class="fas fa-plus"></i>
+    </button>
 
     <script src="scripts.js"></script>
 </body>
-</html>
+</html> 
