@@ -1,14 +1,29 @@
-// Smart Expense Tracker - Modern Clean App
+// Smart AI-Powered Expense Tracker
 class ExpenseTracker {
     constructor() {
         this.API_BASE_URL = '/api';
         this.expenses = [];
-        this.budgets = [];
-        this.currentView = 'home';
-        this.chartColors = [
-            '#6B7BD8', '#8B9AE8', '#A8B5EA', '#C5CFEC', 
-            '#E1E8EE', '#B8D4F1', '#95C0ED', '#72ACE9'
-        ];
+        this.budgets = {};
+        this.salary = {};
+        this.predictions = {};
+        this.currentView = 'dashboard';
+        
+        this.categoryIcons = {
+            'Food & Dining': '🍽️',
+            'Transportation': '🚗',
+            'Bills & Utilities': '📋',
+            'Entertainment': '🎬',
+            'Shopping': '🛍️',
+            'Groceries': '🛒',
+            'Healthcare': '💊',
+            'Education': '📚',
+            'Travel': '✈️',
+            'Personal Care': '🧴',
+            'Investment': '💰',
+            'Insurance': '🛡️',
+            'Rent': '🏠',
+            'Other': '📦'
+        };
         
         this.init();
     }
@@ -16,15 +31,15 @@ class ExpenseTracker {
     async init() {
         this.setupEventListeners();
         this.setCurrentDate();
-        await this.loadData();
-        this.updateDashboard();
-        this.createExpenseChart();
+        await this.loadDashboardData();
+        this.updateUI();
     }
 
     setupEventListeners() {
         // Forms
         document.getElementById('expense-form').addEventListener('submit', this.handleAddExpense.bind(this));
-        document.getElementById('budget-form').addEventListener('submit', this.handleAddBudget.bind(this));
+        document.getElementById('budget-form').addEventListener('submit', this.handleSetBudget.bind(this));
+        document.getElementById('salary-form').addEventListener('submit', this.handleSetSalary.bind(this));
         
         // Modal clicks outside to close
         document.addEventListener('click', (e) => {
@@ -39,13 +54,6 @@ class ExpenseTracker {
                 this.closeAllModals();
             }
         });
-        
-        // Navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                this.updateNavigation(item);
-            });
-        });
     }
 
     setCurrentDate() {
@@ -53,14 +61,16 @@ class ExpenseTracker {
         document.getElementById('expense-date').value = today;
     }
 
-    async loadData() {
+    async loadDashboardData() {
         try {
             await Promise.all([
                 this.loadExpenses(),
-                this.loadBudgets()
+                this.loadBudgets(),
+                this.loadSalary(),
+                this.loadPrediction()
             ]);
         } catch (error) {
-            console.error('Error loading data:', error);
+            console.error('Error loading dashboard data:', error);
             this.showToast('Failed to load data', 'error');
         }
     }
@@ -87,6 +97,33 @@ class ExpenseTracker {
         }
     }
 
+    async loadSalary() {
+        try {
+            const response = await fetch(`${this.API_BASE_URL}/salary`);
+            if (response.ok) {
+                this.salary = await response.json();
+            }
+        } catch (error) {
+            console.error('Error loading salary:', error);
+        }
+    }
+
+    async loadPrediction() {
+        try {
+            const response = await fetch(`${this.API_BASE_URL}/expenses/predict-month`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            if (response.ok) {
+                this.predictions = await response.json();
+            }
+        } catch (error) {
+            console.error('Error loading prediction:', error);
+        }
+    }
+
     async handleAddExpense(e) {
         e.preventDefault();
         
@@ -98,7 +135,7 @@ class ExpenseTracker {
             description: document.getElementById('expense-description').value.trim() || ''
         };
 
-        if (!expense.name || !expense.amount || !expense.date || !expense.category) {
+        if (!expense.name || !expense.amount || !expense.date) {
             this.showToast('Please fill all required fields', 'error');
             return;
         }
@@ -116,11 +153,14 @@ class ExpenseTracker {
             if (response.ok) {
                 const newExpense = await response.json();
                 this.expenses.unshift(newExpense);
-                this.updateDashboard();
+                this.updateUI();
                 this.showToast('Expense added successfully!', 'success');
-                e.target.reset();
-                this.setCurrentDate();
-                this.hideAddExpenseModal();
+                this.resetExpenseForm();
+                this.closeExpenseModal();
+                
+                // Refresh prediction after adding expense
+                await this.loadPrediction();
+                this.updatePredictionCard();
             } else {
                 const error = await response.json();
                 throw new Error(error.error || 'Failed to add expense');
@@ -133,17 +173,13 @@ class ExpenseTracker {
         }
     }
 
-    async handleAddBudget(e) {
+    async handleSetBudget(e) {
         e.preventDefault();
         
-        const budget = {
-            category: document.getElementById('budget-category').value,
-            amount: parseFloat(document.getElementById('budget-amount').value),
-            period: document.getElementById('budget-period').value
-        };
-
-        if (!budget.category || !budget.amount) {
-            this.showToast('Please fill all required fields', 'error');
+        const budgetAmount = parseFloat(document.getElementById('monthly-budget').value);
+        
+        if (!budgetAmount || budgetAmount <= 0) {
+            this.showToast('Please enter a valid budget amount', 'error');
             return;
         }
 
@@ -154,16 +190,14 @@ class ExpenseTracker {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(budget),
+                body: JSON.stringify({ monthly: budgetAmount }),
             });
 
             if (response.ok) {
-                const newBudget = await response.json();
-                this.budgets.push(newBudget);
-                this.updateBudgetAlerts();
-                this.hideBudgetModal();
+                this.budgets = await response.json();
+                this.updateUI();
                 this.showToast('Budget set successfully!', 'success');
-                e.target.reset();
+                this.closeBudgetModal();
             } else {
                 const error = await response.json();
                 throw new Error(error.error || 'Failed to set budget');
@@ -171,6 +205,43 @@ class ExpenseTracker {
         } catch (error) {
             console.error('Error setting budget:', error);
             this.showToast(error.message || 'Failed to set budget', 'error');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async handleSetSalary(e) {
+        e.preventDefault();
+        
+        const salaryAmount = parseFloat(document.getElementById('monthly-salary').value);
+        
+        if (!salaryAmount || salaryAmount <= 0) {
+            this.showToast('Please enter a valid salary amount', 'error');
+            return;
+        }
+
+        try {
+            this.showLoading();
+            const response = await fetch(`${this.API_BASE_URL}/salary`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ monthly: salaryAmount }),
+            });
+
+            if (response.ok) {
+                this.salary = await response.json();
+                this.updateUI();
+                this.showToast('Salary set successfully!', 'success');
+                this.closeSalaryModal();
+            } else {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to set salary');
+            }
+        } catch (error) {
+            console.error('Error setting salary:', error);
+            this.showToast(error.message || 'Failed to set salary', 'error');
         } finally {
             this.hideLoading();
         }
@@ -189,8 +260,12 @@ class ExpenseTracker {
 
             if (response.ok) {
                 this.expenses = this.expenses.filter(expense => expense.id !== expenseId);
-                this.updateDashboard();
+                this.updateUI();
                 this.showToast('Expense deleted successfully!', 'success');
+                
+                // Refresh prediction after deleting expense
+                await this.loadPrediction();
+                this.updatePredictionCard();
             } else {
                 throw new Error('Failed to delete expense');
             }
@@ -213,13 +288,19 @@ class ExpenseTracker {
 
         try {
             this.showLoading();
-            const response = await fetch(`${this.API_BASE_URL}/expenses/categorize?expense_name=${encodeURIComponent(expenseName)}&amount=${amount}`);
+            const response = await fetch(`${this.API_BASE_URL}/expenses/categorize`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: expenseName, amount: amount }),
+            });
             
             if (response.ok) {
                 const data = await response.json();
                 const categorySelect = document.getElementById('expense-category');
-                categorySelect.value = data.suggested_category;
-                this.showToast(`AI suggested: ${data.suggested_category}`, 'info');
+                categorySelect.value = data.category;
+                this.showToast(`AI suggested: ${data.category}`, 'info');
             } else {
                 throw new Error('Failed to get category suggestion');
             }
@@ -231,295 +312,260 @@ class ExpenseTracker {
         }
     }
 
-    async getAIInsights() {
+    async getAIAnalysis() {
         if (this.expenses.length === 0) {
-            this.showToast('Add some expenses to get AI insights', 'info');
+            this.showToast('Add some expenses to get AI analysis', 'info');
             return;
         }
 
         try {
             this.showLoading();
-            const response = await fetch(`${this.API_BASE_URL}/expenses/insights`, {
+            const response = await fetch(`${this.API_BASE_URL}/expenses/analyze`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ expenses: this.expenses }),
+                }
             });
 
             if (response.ok) {
-                const insights = await response.json();
-                this.displayInsights(insights);
-                this.showToast('AI insights updated!', 'success');
+                const analysis = await response.json();
+                this.displayAIAnalysis(analysis);
+                this.showToast('AI analysis updated!', 'success');
             } else {
-                throw new Error('Failed to get insights');
+                throw new Error('Failed to get AI analysis');
             }
         } catch (error) {
-            console.error('Error getting insights:', error);
-            this.showToast('Failed to get AI insights', 'error');
+            console.error('Error getting AI analysis:', error);
+            this.showToast('Failed to get AI analysis', 'error');
         } finally {
             this.hideLoading();
         }
     }
 
-    async getFinancialHealth() {
-        if (this.expenses.length === 0) {
-            this.showToast('Add some expenses to get financial health score', 'info');
+    async showSavingsAdvice() {
+        if (this.salary.monthly <= 0) {
+            this.showToast('Please set your salary first to get savings advice', 'info');
+            this.openSalaryModal();
             return;
         }
 
         try {
             this.showLoading();
-            const response = await fetch(`${this.API_BASE_URL}/financial-health`, {
+            const response = await fetch(`${this.API_BASE_URL}/savings/allocate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    expenses: this.expenses,
-                    budgets: this.budgets 
-                }),
+                }
             });
 
             if (response.ok) {
-                const healthData = await response.json();
-                this.displayFinancialHealth(healthData);
-                this.showToast('Financial health calculated!', 'success');
+                const advice = await response.json();
+                this.displaySavingsAdvice(advice);
+                this.showToast('Savings advice updated!', 'success');
             } else {
-                throw new Error('Failed to calculate financial health');
+                throw new Error('Failed to get savings advice');
             }
         } catch (error) {
-            console.error('Error calculating financial health:', error);
-            this.showToast('Failed to calculate financial health', 'error');
+            console.error('Error getting savings advice:', error);
+            this.showToast('Failed to get savings advice', 'error');
         } finally {
             this.hideLoading();
         }
     }
 
-    updateDashboard() {
+    updateUI() {
         this.updateOverviewCards();
+        this.updatePredictionCard();
+        this.updateCategoryBreakdown();
         this.updateRecentExpenses();
-        this.updateBudgetAlerts();
-        this.updateExpenseChart();
     }
 
     updateOverviewCards() {
-        const totalExpenses = this.expenses.reduce((sum, expense) => sum + expense.amount, 0);
         const currentMonth = new Date().toISOString().slice(0, 7);
-        const monthlyExpenses = this.expenses
-            .filter(expense => expense.date.startsWith(currentMonth))
-            .reduce((sum, expense) => sum + expense.amount, 0);
-
-        // Simulate total balance (in real app, this would come from actual account balance)
-        const totalBalance = 25000 - totalExpenses;
-
-        document.getElementById('total-balance').textContent = this.formatCurrency(totalBalance);
-        document.getElementById('month-expense').textContent = this.formatCurrency(monthlyExpenses);
-    }
-
-    updateRecentExpenses() {
-        const recentExpenses = this.expenses.slice(0, 5);
-        const container = document.getElementById('recent-expenses');
-
-        if (recentExpenses.length === 0) {
-            container.innerHTML = this.renderEmptyState('💳', 'No expenses yet', 'Add your first expense to get started');
-            return;
-        }
-
-        container.innerHTML = recentExpenses.map(expense => `
-            <div class="expense-item">
-                <div class="expense-icon">${this.getCategoryIcon(expense.category)}</div>
-                <div class="expense-details">
-                    <div class="expense-name">${expense.name}</div>
-                    <div class="expense-meta">${expense.category} • ${this.formatDate(expense.date)}</div>
-                </div>
-                <div class="expense-amount">-${this.formatCurrency(expense.amount)}</div>
-                <button class="expense-delete" onclick="app.deleteExpense('${expense.id}')">🗑️</button>
-            </div>
-        `).join('');
-    }
-
-    async updateBudgetAlerts() {
-        if (this.budgets.length === 0) {
-            document.getElementById('alerts-section').style.display = 'none';
-            return;
-        }
-
-        try {
-            const response = await fetch(`${this.API_BASE_URL}/budget/alerts`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    expenses: this.expenses, 
-                    budgets: this.budgets 
-                }),
-            });
-
-            if (response.ok) {
-                const alerts = await response.json();
-                this.displayBudgetAlerts(alerts);
-            }
-        } catch (error) {
-            console.error('Error getting budget alerts:', error);
-        }
-    }
-
-    displayBudgetAlerts(alerts) {
-        const container = document.getElementById('alerts-container');
-        const section = document.getElementById('alerts-section');
-
-        if (alerts.length === 0) {
-            section.style.display = 'none';
-            return;
-        }
-
-        section.style.display = 'block';
-        container.innerHTML = alerts.map(alert => `
-            <div class="alert-item ${alert.alert_type}">
-                <div class="alert-header">
-                    <span class="alert-category">${this.getCategoryIcon(alert.category)} ${alert.category}</span>
-                    <span class="alert-percentage">${alert.percentage_used.toFixed(0)}%</span>
-                </div>
-                <div class="alert-progress">
-                    <div class="alert-progress-fill" style="width: ${Math.min(alert.percentage_used, 100)}%"></div>
-                </div>
-                <div class="alert-message">
-                    Spent ${this.formatCurrency(alert.spent_amount)} of ${this.formatCurrency(alert.budget_amount)} • ${alert.days_remaining} days remaining
-                </div>
-            </div>
-        `).join('');
-    }
-
-    displayInsights(insights) {
-        const container = document.getElementById('insights-container');
-        const section = document.getElementById('insights-section');
-
-        if (insights.length === 0) {
-            section.style.display = 'none';
-            return;
-        }
-
-        section.style.display = 'block';
-        container.innerHTML = insights.map(insight => `
-            <div class="insight-item">
-                <div class="insight-title">💡 AI Insight</div>
-                <div class="insight-message">${insight.message}</div>
-                <div class="insight-confidence">Confidence: ${(insight.confidence * 100).toFixed(0)}%</div>
-            </div>
-        `).join('');
-    }
-
-    displayFinancialHealth(healthData) {
-        const container = document.getElementById('insights-container');
-        const section = document.getElementById('insights-section');
-
-        section.style.display = 'block';
-        const healthHtml = `
-            <div class="insight-item">
-                <div class="insight-title">📊 Financial Health Score</div>
-                <div class="insight-message">${healthData.message}</div>
-                <div class="insight-confidence">Confidence: ${(healthData.confidence * 100).toFixed(0)}%</div>
-            </div>
-        `;
-
-        container.innerHTML = healthHtml + container.innerHTML;
-    }
-
-    createExpenseChart() {
-        const canvas = document.getElementById('expense-chart');
-        const ctx = canvas.getContext('2d');
+        const monthlyExpenses = this.expenses.filter(expense => expense.date.startsWith(currentMonth));
+        const totalSpent = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         
-        // Calculate category breakdown
-        const categoryData = this.getCategoryBreakdown();
+        // Update budget card
+        const budgetAmount = this.budgets.monthly || 0;
+        const budgetProgress = budgetAmount > 0 ? (totalSpent / budgetAmount) * 100 : 0;
         
-        if (Object.keys(categoryData).length === 0) {
-            // Show empty chart
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            return;
+        document.getElementById('budget-amount').textContent = this.formatCurrency(budgetAmount);
+        document.getElementById('budget-spent').textContent = this.formatCurrency(totalSpent);
+        document.getElementById('budget-remaining').textContent = this.formatCurrency(Math.max(0, budgetAmount - totalSpent)) + ' left';
+        
+        const progressFill = document.getElementById('budget-progress');
+        progressFill.style.width = `${Math.min(budgetProgress, 100)}%`;
+        
+        // Change color based on budget usage
+        if (budgetProgress > 90) {
+            progressFill.style.background = 'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)';
+        } else if (budgetProgress > 70) {
+            progressFill.style.background = 'linear-gradient(135deg, #ed8936 0%, #dd6b20 100%)';
+        } else {
+            progressFill.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
         }
-
-        this.drawDonutChart(ctx, categoryData, canvas.width, canvas.height);
-        this.updateChartLegend(categoryData);
+        
+        // Update monthly spending card
+        document.getElementById('monthly-spending').textContent = this.formatCurrency(totalSpent);
+        document.getElementById('expense-count').textContent = `${monthlyExpenses.length} expenses`;
+        
+        const dailyAverage = monthlyExpenses.length > 0 ? totalSpent / new Date().getDate() : 0;
+        document.getElementById('daily-average').textContent = this.formatCurrency(dailyAverage) + '/day';
     }
 
-    updateExpenseChart() {
-        this.createExpenseChart();
+    updatePredictionCard() {
+        const predictedAmount = this.predictions.predicted_total || 0;
+        const confidence = this.predictions.confidence || 0;
+        const message = this.predictions.message || 'No prediction available';
+        
+        document.getElementById('predicted-amount').textContent = this.formatCurrency(predictedAmount);
+        document.getElementById('confidence-score').textContent = `${confidence}%`;
+        document.getElementById('prediction-message').textContent = message;
     }
 
-    getCategoryBreakdown() {
+    updateCategoryBreakdown() {
         const currentMonth = new Date().toISOString().slice(0, 7);
         const monthlyExpenses = this.expenses.filter(expense => expense.date.startsWith(currentMonth));
         
-        const categoryData = {};
-        monthlyExpenses.forEach(expense => {
-            categoryData[expense.category] = (categoryData[expense.category] || 0) + expense.amount;
-        });
+        const categoryBreakdown = {};
+        const totalSpent = monthlyExpenses.reduce((sum, expense) => {
+            categoryBreakdown[expense.category] = (categoryBreakdown[expense.category] || 0) + expense.amount;
+            return sum + expense.amount;
+        }, 0);
 
-        return categoryData;
-    }
-
-    drawDonutChart(ctx, data, width, height) {
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const radius = Math.min(width, height) / 2 - 10;
-        const innerRadius = radius * 0.6;
-
-        const total = Object.values(data).reduce((sum, value) => sum + value, 0);
-        let currentAngle = -Math.PI / 2;
-
-        const categories = Object.keys(data);
+        const categoryGrid = document.getElementById('category-grid');
         
-        categories.forEach((category, index) => {
-            const value = data[category];
-            const angle = (value / total) * 2 * Math.PI;
-            const color = this.chartColors[index % this.chartColors.length];
-
-            // Draw arc
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + angle);
-            ctx.arc(centerX, centerY, innerRadius, currentAngle + angle, currentAngle, true);
-            ctx.closePath();
-            ctx.fillStyle = color;
-            ctx.fill();
-
-            currentAngle += angle;
-        });
-
-        // Update chart center text
-        document.getElementById('chart-total').textContent = this.formatCurrency(total);
-    }
-
-    updateChartLegend(categoryData) {
-        const container = document.getElementById('chart-legend');
-        
-        if (Object.keys(categoryData).length === 0) {
-            container.innerHTML = '<div class="empty-state">No data available</div>';
+        if (Object.keys(categoryBreakdown).length === 0) {
+            categoryGrid.innerHTML = this.getEmptyState('📊', 'No expenses yet', 'Start adding expenses to see breakdown');
             return;
         }
 
-        const categories = Object.keys(categoryData);
-        const total = Object.values(categoryData).reduce((sum, value) => sum + value, 0);
-
-        container.innerHTML = categories.map((category, index) => {
-            const amount = categoryData[category];
-            const percentage = ((amount / total) * 100).toFixed(1);
-            const color = this.chartColors[index % this.chartColors.length];
-
-            return `
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: ${color}"></div>
-                    <span class="legend-label">${category}</span>
-                    <span class="legend-amount">${this.formatCurrency(amount)} (${percentage}%)</span>
-                </div>
-            `;
-        }).join('');
+        categoryGrid.innerHTML = Object.entries(categoryBreakdown)
+            .sort(([,a], [,b]) => b - a)
+            .map(([category, amount]) => {
+                const percentage = ((amount / totalSpent) * 100).toFixed(1);
+                return `
+                    <div class="category-item">
+                        <div class="category-icon">${this.categoryIcons[category] || '📦'}</div>
+                        <div class="category-name">${category}</div>
+                        <div class="category-amount">${this.formatCurrency(amount)}</div>
+                        <div class="category-percentage">${percentage}%</div>
+                    </div>
+                `;
+            }).join('');
     }
 
-    // UI Methods
-    showAddExpenseModal() {
-        document.getElementById('add-expense-modal').classList.add('active');
+    updateRecentExpenses() {
+        const recentExpenses = this.expenses.slice(0, 10);
+        const expenseList = document.getElementById('recent-expenses');
+
+        if (recentExpenses.length === 0) {
+            expenseList.innerHTML = this.getEmptyState('💳', 'No expenses yet', 'Add your first expense to get started');
+            return;
+        }
+
+        expenseList.innerHTML = recentExpenses.map(expense => `
+            <div class="expense-item">
+                <div class="expense-icon">${this.categoryIcons[expense.category] || '📦'}</div>
+                <div class="expense-details">
+                    <div class="expense-name">${expense.name}</div>
+                    <div class="expense-meta">
+                        <span>${expense.category}</span>
+                        <span>•</span>
+                        <span>${this.formatDate(expense.date)}</span>
+                    </div>
+                </div>
+                <div class="expense-amount">${this.formatCurrency(expense.amount)}</div>
+                <div class="expense-actions">
+                    <button class="expense-action delete" onclick="app.deleteExpense('${expense.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    displayAIAnalysis(analysis) {
+        const container = document.getElementById('insights-container');
+        
+        let html = `
+            <div class="insight-item">
+                <div class="insight-title">
+                    <i class="fas fa-chart-line"></i>
+                    Financial Health Score: ${analysis.health_score}/100
+                </div>
+                <div class="insight-message">
+                    ${analysis.insights.join('<br>')}
+                </div>
+                <div class="insight-recommendations">
+                    <h4>Recommendations:</h4>
+                    <ul class="recommendation-list">
+                        ${analysis.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        document.getElementById('insights-section').style.display = 'block';
+    }
+
+    displaySavingsAdvice(advice) {
+        const container = document.getElementById('insights-container');
+        
+        let html = `
+            <div class="insight-item">
+                <div class="insight-title">
+                    <i class="fas fa-piggy-bank"></i>
+                    Savings Allocation Advice
+                </div>
+                <div class="insight-message">
+                    ${advice.message}
+                </div>
+                <div class="insight-recommendations">
+                    <h4>Suggested Allocations:</h4>
+                    <ul class="recommendation-list">
+                        ${advice.suggestions.map(suggestion => `
+                            <li>
+                                <strong>${suggestion.type}:</strong> ${this.formatCurrency(suggestion.amount)}
+                                <br><small>${suggestion.description}</small>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        document.getElementById('insights-section').style.display = 'block';
+    }
+
+    // Modal Management
+    openExpenseModal() {
+        this.setCurrentDate();
+        document.getElementById('expense-modal').classList.add('active');
+    }
+
+    closeExpenseModal() {
+        document.getElementById('expense-modal').classList.remove('active');
+    }
+
+    openBudgetModal() {
+        document.getElementById('monthly-budget').value = this.budgets.monthly || '';
+        document.getElementById('budget-modal').classList.add('active');
+    }
+
+    closeBudgetModal() {
+        document.getElementById('budget-modal').classList.remove('active');
+    }
+
+    openSalaryModal() {
+        document.getElementById('monthly-salary').value = this.salary.monthly || '';
+        document.getElementById('salary-modal').classList.add('active');
+    }
+
+    closeSalaryModal() {
+        document.getElementById('salary-modal').classList.remove('active');
     }
 
     closeAllModals() {
@@ -528,20 +574,108 @@ class ExpenseTracker {
         });
     }
 
-    hideAddExpenseModal() {
-        document.getElementById('add-expense-modal').classList.remove('active');
+    // Navigation
+    showDashboard() {
+        this.currentView = 'dashboard';
+        this.updateNavigation();
+        this.updateUI();
     }
 
-    hideBudgetModal() {
-        document.getElementById('budget-modal').classList.remove('active');
+    showExpenses() {
+        this.currentView = 'expenses';
+        this.updateNavigation();
+        this.showAllExpenses();
+    }
+
+    showAnalytics() {
+        this.currentView = 'analytics';
+        this.updateNavigation();
+        this.getAIAnalysis();
+    }
+
+    showProfile() {
+        this.currentView = 'profile';
+        this.updateNavigation();
+        this.showProfileInfo();
+    }
+
+    showAllExpenses() {
+        const expenseList = document.getElementById('recent-expenses');
+        
+        if (this.expenses.length === 0) {
+            expenseList.innerHTML = this.getEmptyState('💳', 'No expenses yet', 'Add your first expense to get started');
+            return;
+        }
+
+        expenseList.innerHTML = this.expenses.map(expense => `
+            <div class="expense-item">
+                <div class="expense-icon">${this.categoryIcons[expense.category] || '📦'}</div>
+                <div class="expense-details">
+                    <div class="expense-name">${expense.name}</div>
+                    <div class="expense-meta">
+                        <span>${expense.category}</span>
+                        <span>•</span>
+                        <span>${this.formatDate(expense.date)}</span>
+                    </div>
+                    ${expense.description ? `<div class="expense-description">${expense.description}</div>` : ''}
+                </div>
+                <div class="expense-amount">${this.formatCurrency(expense.amount)}</div>
+                <div class="expense-actions">
+                    <button class="expense-action delete" onclick="app.deleteExpense('${expense.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    showProfileInfo() {
+        const totalExpenses = this.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const categories = [...new Set(this.expenses.map(exp => exp.category))];
+        
+        const profileInfo = `
+            <div class="insight-item">
+                <div class="insight-title">
+                    <i class="fas fa-user"></i>
+                    Profile Summary
+                </div>
+                <div class="insight-message">
+                    <strong>Total Expenses:</strong> ${this.formatCurrency(totalExpenses)}<br>
+                    <strong>Total Records:</strong> ${this.expenses.length}<br>
+                    <strong>Categories Used:</strong> ${categories.length}<br>
+                    <strong>Monthly Salary:</strong> ${this.formatCurrency(this.salary.monthly || 0)}<br>
+                    <strong>Monthly Budget:</strong> ${this.formatCurrency(this.budgets.monthly || 0)}
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('insights-container').innerHTML = profileInfo;
+        document.getElementById('insights-section').style.display = 'block';
+    }
+
+    updateNavigation() {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        const activeItem = document.querySelector(`[onclick="app.show${this.currentView.charAt(0).toUpperCase() + this.currentView.slice(1)}()"]`);
+        if (activeItem) {
+            activeItem.classList.add('active');
+        }
+    }
+
+    // Utility Methods
+    resetExpenseForm() {
+        document.getElementById('expense-form').reset();
+        this.setCurrentDate();
     }
 
     showLoading() {
-        document.getElementById('loading').classList.add('active');
+        document.getElementById('loading-overlay').classList.add('active');
     }
 
     hideLoading() {
-        document.getElementById('loading').classList.remove('active');
+        document.getElementById('loading-overlay').classList.remove('active');
     }
 
     showToast(message, type = 'info') {
@@ -557,180 +691,6 @@ class ExpenseTracker {
         }, 3000);
     }
 
-    // Navigation Methods
-    showHome() {
-        this.currentView = 'home';
-        // Scroll to top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        this.updateDashboard();
-    }
-
-    showExpenses() {
-        this.currentView = 'expenses';
-        this.showAllExpensesView();
-    }
-
-    showBudgets() {
-        this.currentView = 'budgets';
-        this.showBudgetModal();
-    }
-
-    showProfile() {
-        this.currentView = 'profile';
-        this.showProfileView();
-    }
-
-    showAllExpenses() {
-        this.showAllExpensesView();
-    }
-
-    showAllExpensesView() {
-        // Show all expenses in a clean view
-        const container = document.getElementById('recent-expenses');
-        if (this.expenses.length === 0) {
-            container.innerHTML = this.renderEmptyState('💳', 'No expenses yet', 'Add your first expense to get started');
-            return;
-        }
-
-        container.innerHTML = this.expenses.map(expense => `
-            <div class="expense-item">
-                <div class="expense-icon">${this.getCategoryIcon(expense.category)}</div>
-                <div class="expense-details">
-                    <div class="expense-name">${expense.name}</div>
-                    <div class="expense-meta">${expense.category} • ${this.formatDate(expense.date)}</div>
-                    ${expense.description ? `<div class="expense-description">${expense.description}</div>` : ''}
-                </div>
-                <div class="expense-amount">-${this.formatCurrency(expense.amount)}</div>
-                <button class="expense-delete" onclick="app.deleteExpense('${expense.id}')">🗑️</button>
-            </div>
-        `).join('');
-        
-        this.showToast(`Showing all ${this.expenses.length} expenses`, 'info');
-    }
-
-    showProfileView() {
-        // Show user profile/settings
-        const totalExpenses = this.expenses.reduce((sum, exp) => sum + exp.amount, 0);
-        const avgDaily = totalExpenses / Math.max(this.expenses.length, 1);
-        const categories = [...new Set(this.expenses.map(exp => exp.category))];
-        
-        const profileData = {
-            totalExpenses: this.formatCurrency(totalExpenses),
-            expenseCount: this.expenses.length,
-            avgDaily: this.formatCurrency(avgDaily),
-            categoriesUsed: categories.length,
-            joinedDate: '2025-01-01' // Mock join date
-        };
-        
-        // Create a simple profile display
-        alert(`Profile Summary:
-📊 Total Expenses: ${profileData.totalExpenses}
-📈 Total Records: ${profileData.expenseCount}
-💰 Avg Daily: ${profileData.avgDaily}
-🏷️ Categories Used: ${profileData.categoriesUsed}
-📅 Member Since: ${profileData.joinedDate}`);
-    }
-
-    showAnalytics() {
-        this.getFinancialHealth();
-        // Also show analytics data
-        this.showAnalyticsView();
-    }
-
-    showAnalyticsView() {
-        if (this.expenses.length === 0) {
-            this.showToast('Add some expenses to view analytics', 'info');
-            return;
-        }
-
-        // Calculate some analytics
-        const categoryBreakdown = this.getCategoryBreakdown();
-        const totalSpent = Object.values(categoryBreakdown).reduce((sum, amount) => sum + amount, 0);
-        
-        // Show analytics in an alert for now (could be a modal later)
-        let analyticsText = '📊 Expense Analytics\n\n';
-        analyticsText += `Total Spent: ${this.formatCurrency(totalSpent)}\n\n`;
-        analyticsText += 'Category Breakdown:\n';
-        
-        Object.entries(categoryBreakdown).forEach(([category, amount]) => {
-            const percentage = ((amount / totalSpent) * 100).toFixed(1);
-            analyticsText += `${this.getCategoryIcon(category)} ${category}: ${this.formatCurrency(amount)} (${percentage}%)\n`;
-        });
-        
-        alert(analyticsText);
-    }
-
-    showSettings() {
-        // Show settings options
-        const settingsMenu = `Settings Menu:
-⚙️ App Settings
-🔔 Notifications: Enabled
-💱 Currency: INR (₹)
-📊 Chart Style: Donut
-🎨 Theme: Light
-🔄 Auto-sync: On
-📱 Version: 1.0.0`;
-        
-        alert(settingsMenu);
-    }
-
-    refreshInsights() {
-        this.getAIInsights();
-    }
-
-    filterExpenses(period) {
-        let filteredExpenses = [];
-        const now = new Date();
-        
-        switch(period) {
-            case 'week':
-                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                filteredExpenses = this.expenses.filter(exp => new Date(exp.date) >= weekAgo);
-                break;
-            case 'month':
-                const monthStr = now.toISOString().slice(0, 7);
-                filteredExpenses = this.expenses.filter(exp => exp.date.startsWith(monthStr));
-                break;
-            case 'year':
-                const yearStr = now.getFullYear().toString();
-                filteredExpenses = this.expenses.filter(exp => exp.date.startsWith(yearStr));
-                break;
-            default:
-                filteredExpenses = this.expenses;
-        }
-        
-        // Update chart with filtered data
-        const categoryData = {};
-        filteredExpenses.forEach(expense => {
-            categoryData[expense.category] = (categoryData[expense.category] || 0) + expense.amount;
-        });
-        
-        this.updateChartLegend(categoryData);
-        this.drawDonutChart(document.getElementById('expense-chart').getContext('2d'), categoryData, 120, 120);
-        
-        this.showToast(`Filtered to ${period}: ${filteredExpenses.length} expenses`, 'info');
-    }
-
-    toggleCardMenu(cardType) {
-        // Show card menu options
-        const menuOptions = {
-            balance: ['View Details', 'Set Goal', 'Export Data'],
-            expense: ['View Details', 'Set Budget', 'Category Analysis']
-        };
-        
-        const options = menuOptions[cardType] || ['Option 1', 'Option 2', 'Option 3'];
-        const menu = `${cardType.charAt(0).toUpperCase() + cardType.slice(1)} Menu:\n${options.join('\n')}`;
-        alert(menu);
-    }
-
-    updateNavigation(activeItem) {
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        activeItem.classList.add('active');
-    }
-
-    // Utility Methods
     formatCurrency(amount) {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
@@ -744,78 +704,98 @@ class ExpenseTracker {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
+            year: 'numeric'
         });
     }
 
-    getCategoryIcon(category) {
-        const icons = {
-            'Food': '🍽️',
-            'Transportation': '🚗',
-            'Bills': '📋',
-            'Entertainment': '🎬',
-            'Housing': '🏠',
-            'Groceries': '🛒',
-            'Health': '💊',
-            'Education': '📚',
-            'Personal Care': '🧴',
-            'Savings': '💰',
-            'Travel': '✈️',
-            'Other': '📦'
-        };
-        return icons[category] || '📦';
-    }
-
-    renderEmptyState(icon, title, description) {
+    getEmptyState(icon, title, description) {
         return `
             <div class="empty-state">
-                <div class="empty-icon">${icon}</div>
-                <div class="empty-title">${title}</div>
-                <div class="empty-description">${description}</div>
+                <i class="fas fa-${icon === '📊' ? 'chart-pie' : icon === '💳' ? 'credit-card' : 'info-circle'}"></i>
+                <h3>${title}</h3>
+                <p>${description}</p>
             </div>
         `;
+    }
+
+    // Additional utility methods
+    toggleCategoryView() {
+        const categoryGrid = document.getElementById('category-grid');
+        const button = document.querySelector('.toggle-btn');
+        
+        if (categoryGrid.style.display === 'none') {
+            categoryGrid.style.display = 'grid';
+            button.innerHTML = '<i class="fas fa-compress"></i>';
+        } else {
+            categoryGrid.style.display = 'none';
+            button.innerHTML = '<i class="fas fa-expand"></i>';
+        }
+    }
+
+    showMonthlyView() {
+        this.showToast('Monthly view - showing current month data', 'info');
+        this.updateUI();
+    }
+
+    refreshInsights() {
+        this.getAIAnalysis();
+    }
+
+    openSettingsModal() {
+        this.showToast('Settings coming soon!', 'info');
     }
 }
 
 // Global functions for HTML onclick handlers
-function showAddExpenseModal() {
-    app.showAddExpenseModal();
+let app;
+
+function openExpenseModal() {
+    app.openExpenseModal();
 }
 
-function hideAddExpenseModal() {
-    app.hideAddExpenseModal();
+function closeExpenseModal() {
+    app.closeExpenseModal();
 }
 
-function showBudgetModal() {
-    app.showBudgetModal();
+function openBudgetModal() {
+    app.openBudgetModal();
 }
 
-function hideBudgetModal() {
-    app.hideBudgetModal();
+function closeBudgetModal() {
+    app.closeBudgetModal();
+}
+
+function openSalaryModal() {
+    app.openSalaryModal();
+}
+
+function closeSalaryModal() {
+    app.closeSalaryModal();
 }
 
 function suggestCategory() {
     app.suggestCategory();
 }
 
-function getAIInsights() {
-    app.getAIInsights();
+function getAIAnalysis() {
+    app.getAIAnalysis();
 }
 
-function refreshInsights() {
-    app.refreshInsights();
+function showSavingsAdvice() {
+    app.showSavingsAdvice();
 }
 
-function showHome() {
-    app.showHome();
+function showDashboard() {
+    app.showDashboard();
 }
 
 function showExpenses() {
     app.showExpenses();
 }
 
-function showBudgets() {
-    app.showBudgets();
+function showAnalytics() {
+    app.showAnalytics();
 }
 
 function showProfile() {
@@ -826,24 +806,23 @@ function showAllExpenses() {
     app.showAllExpenses();
 }
 
-function showAnalytics() {
-    app.showAnalytics();
+function toggleCategoryView() {
+    app.toggleCategoryView();
 }
 
-function showSettings() {
-    app.showSettings();
+function showMonthlyView() {
+    app.showMonthlyView();
 }
 
-function filterExpenses(period) {
-    app.filterExpenses(period);
+function refreshInsights() {
+    app.refreshInsights();
 }
 
-function toggleCardMenu(cardType) {
-    app.toggleCardMenu(cardType);
+function openSettingsModal() {
+    app.openSettingsModal();
 }
 
 // Initialize the app when DOM is loaded
-let app;
 document.addEventListener('DOMContentLoaded', () => {
     app = new ExpenseTracker();
 });
