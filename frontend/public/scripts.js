@@ -6,8 +6,8 @@ class ExpenseTracker {
         this.budgets = [];
         this.currentView = 'home';
         this.chartColors = [
-            '#007AFF', '#5856D6', '#34C759', '#FF9500', 
-            '#FF3B30', '#5AC8FA', '#FFCC00', '#FF6347'
+            '#6B7BD8', '#8B9AE8', '#A8B5EA', '#C5CFEC', 
+            '#E1E8EE', '#B8D4F1', '#95C0ED', '#72ACE9'
         ];
         
         this.init();
